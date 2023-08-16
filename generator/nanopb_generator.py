@@ -68,9 +68,7 @@ else:
 try:
     # Add some dummy imports to keep packaging tools happy.
     import google # bbfreeze seems to need these
-    import pkg_resources # pyinstaller / protobuf 2.5 seem to need these
     from proto import nanopb_pb2 # pyinstaller seems to need this
-    import pkg_resources.py2_warn
 except:
     # Don't care, we will error out later if it is actually important.
     pass
@@ -99,7 +97,11 @@ datatypes = {
     FieldD.TYPE_UINT32:     ('uint32_t', 'UINT32',      5,  4),
     FieldD.TYPE_UINT64:     ('uint64_t', 'UINT64',     10,  8),
 
-    # Integer size override options
+    # Integer size override option
+    (FieldD.TYPE_ENUM,    nanopb_pb2.IS_8):   ('uint8_t', 'ENUM',  4,  1),
+    (FieldD.TYPE_ENUM,   nanopb_pb2.IS_16):   ('uint16_t', 'ENUM',  4,  2),
+    (FieldD.TYPE_ENUM,   nanopb_pb2.IS_32):   ('uint32_t', 'ENUM',  4,  4),
+    (FieldD.TYPE_ENUM,   nanopb_pb2.IS_64):   ('uint64_t', 'ENUM',  4,  8),
     (FieldD.TYPE_INT32,   nanopb_pb2.IS_8):   ('int8_t',   'INT32', 10,  1),
     (FieldD.TYPE_INT32,  nanopb_pb2.IS_16):   ('int16_t',  'INT32', 10,  2),
     (FieldD.TYPE_INT32,  nanopb_pb2.IS_32):   ('int32_t',  'INT32', 10,  4),
@@ -431,7 +433,18 @@ class Enum(ProtoElement):
         if leading_comment:
             result = '%s\n' % leading_comment
 
-        result += 'typedef enum %s {' % Globals.naming_style.enum_name(self.names)
+        result += 'typedef enum %s' % Globals.naming_style.enum_name(self.names)
+
+        # Override the enum size if user wants to use smaller integers
+        if (FieldD.TYPE_ENUM, self.options.int_size) in datatypes:
+            self.ctype, self.pbtype, self.enc_size, self.data_item_size = datatypes[(FieldD.TYPE_ENUM, self.options.int_size)]
+            result += '\n#ifdef __cplusplus\n'
+            result += ' : ' + self.ctype + '\n'
+            result += '#endif\n'
+            result += '{'
+        else:
+            result += ' {'
+
         if trailing_comment:
             result += " " + trailing_comment
 
@@ -2499,7 +2512,7 @@ def main_cli():
             if dirname and not os.path.exists(dirname):
                 os.makedirs(dirname)
 
-            with open(path, 'w') as f:
+            with open(path, 'w', encoding='utf-8') as f:
                 f.write(data)
 
 def main_plugin():
