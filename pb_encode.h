@@ -49,6 +49,8 @@ struct pb_ostream_s
 
     /* Number of bytes written so far. */
     size_t bytes_written;
+
+    void* userarg;
     
 #ifndef PB_NO_ERRMSG
     /* Pointer to constant (ROM) string when decoding function returns error */
