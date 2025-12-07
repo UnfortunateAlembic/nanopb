@@ -755,6 +755,7 @@ bool checkreturn pb_encode_submessage(pb_ostream_t *stream, const pb_msgdesc_t *
      * what it did the first time. */
     substream.callback = stream->callback;
     substream.state = stream->state;
+    substream.userarg = stream->userarg;
     substream.max_size = size;
     substream.bytes_written = 0;
 #ifndef PB_NO_ERRMSG
@@ -765,6 +766,7 @@ bool checkreturn pb_encode_submessage(pb_ostream_t *stream, const pb_msgdesc_t *
     
     stream->bytes_written += substream.bytes_written;
     stream->state = substream.state;
+    stream->userarg = substream.userarg;
 #ifndef PB_NO_ERRMSG
     stream->errmsg = substream.errmsg;
 #endif
